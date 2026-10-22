@@ -1,0 +1,42 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "fiberdesk"
+version = "0.1.0"
+description = "Desktop app for fiber link budgets, OTDR result review, TIA-598 colour codes and PON splitter planning"
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{ name = "asunode" }]
+requires-python = ">=3.12"
+dependencies = [
+    "PySide6>=6.7",
+    "pyqtgraph>=0.13.7",
+    "numpy>=1.26",
+]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: POSIX :: Linux",
+    "Environment :: X11 Applications :: Qt",
+    "Topic :: Scientific/Engineering",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8"]
+
+[project.gui-scripts]
+fiberdesk = "fiberdesk.app:main"
+
+[project.urls]
+Homepage = "https://github.com/asunode/fiberdesk"
+
+[tool.setuptools.packages.find]
+include = ["fiberdesk*"]
+
+[tool.setuptools.package-data]
+"fiberdesk.ui" = ["assets/*.svg"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

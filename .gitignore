@@ -1,0 +1,20 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.venv/
+.pytest_cache/
+
+# Local database (rebuilt from the demo seed)
+data/
+
+# Exported reports
+*.pdf
+
+# Private working notes, not part of the repository
+NEXUS.md
+bilgi/
+design.md
+WORKLOG.md
