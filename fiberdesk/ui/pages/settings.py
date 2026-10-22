@@ -15,8 +15,7 @@ from ..widgets import Card, FlowGrid, PageHeader, dspin, scrollable
 SCALARS = {
     "set.components": (("splice_loss_db", "set.splice", 0, 2, 0.01, 2),
                        ("connector_loss_db", "set.connector", 0, 3, 0.05, 2)),
-    "set.verdicts": (("safety_margin_db", "set.safety", 0, 20, 0.5, 1),
-                     ("warn_band_db", "set.warn_band", 0, 20, 0.5, 1)),
+    "set.verdicts": (("safety_margin_db", "set.safety", 0, 20, 0.5, 1),),
     "set.gpon": (("gpon_b_plus_db", "set.gpon_b", 10, 50, 0.5, 1),
                  ("gpon_c_plus_db", "set.gpon_c", 10, 50, 0.5, 1)),
     "set.events": (("splice_warn_db", "set.splice_warn", 0, 5, 0.01, 2),

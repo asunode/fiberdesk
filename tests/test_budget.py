@@ -17,8 +17,9 @@ def test_loss_items_use_default_table():
     assert losses["splitters"] == pytest.approx(17.1)
     assert result.total_loss_db == pytest.approx(22.0)
     assert result.available_db == pytest.approx(31.0)
-    # 31 - 22 - 3 (safety) = 6 dB left → PASS
-    assert result.remaining_db == pytest.approx(6.0)
+    # 31 - 22 = 9 dB left, above the 3 dB safety margin → PASS
+    assert result.remaining_db == pytest.approx(9.0)
+    assert result.safety_margin_db == pytest.approx(3.0)
     assert result.status is Status.PASS
 
 
@@ -29,9 +30,9 @@ def test_fiber_attenuation_per_wavelength(wavelength, expected):
 
 
 @pytest.mark.parametrize("rx, status", [
-    (-13.0, Status.FAIL),  # 13 - 10.5 - 3 = -0.5
-    (-15.0, Status.WARN),  # 1.5
-    (-17.0, Status.PASS),  # 3.5
+    (-10.0, Status.FAIL),  # 10 - 10.5 = -0.5
+    (-12.0, Status.WARN),  # 1.5, below the 3 dB safety margin
+    (-14.0, Status.PASS),  # 3.5
 ])
 def test_status_bands(rx, status):
     # Loss is exactly 10.5 dB (one 1:8 splitter), safety 3 dB.
@@ -41,12 +42,22 @@ def test_status_bands(rx, status):
     assert result.status is status
 
 
-def test_warn_band_edges():
+def test_safety_margin_edges():
     base = dict(length_km=0.0, wavelength_nm=1310, splices=0, connectors=0)
-    # remaining exactly 0 → WARN, exactly 3 → PASS
-    assert calculate_budget(BudgetInput(0.0, -3.0, **base)).status is Status.WARN
-    assert calculate_budget(BudgetInput(0.0, -6.0, **base)).status is Status.PASS
-    assert calculate_budget(BudgetInput(0.0, -2.99, **base)).status is Status.FAIL
+    # No loss: remaining = power budget. Exactly 0 → WARN, exactly the safety margin → PASS.
+    assert calculate_budget(BudgetInput(0.0, 0.0, **base)).status is Status.WARN
+    assert calculate_budget(BudgetInput(0.0, -2.99, **base)).status is Status.WARN
+    assert calculate_budget(BudgetInput(0.0, -3.0, **base)).status is Status.PASS
+    assert calculate_budget(BudgetInput(0.0, 0.01, **base)).status is Status.FAIL
+
+
+def test_safety_margin_is_a_threshold_not_a_loss():
+    inp = dict(tx_power_dbm=0.0, rx_sensitivity_dbm=-10.0, length_km=0.0, wavelength_nm=1310,
+               splices=0, connectors=2)
+    strict = calculate_budget(BudgetInput(**inp, safety_margin_db=9.5))
+    relaxed = calculate_budget(BudgetInput(**inp, safety_margin_db=1.0))
+    assert strict.remaining_db == relaxed.remaining_db == pytest.approx(9.0)
+    assert (strict.status, relaxed.status) == (Status.WARN, Status.PASS)
 
 
 def test_explicit_safety_margin_and_custom_defaults():

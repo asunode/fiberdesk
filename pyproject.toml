@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "fiberdesk"
-version = "0.1.0"
+version = "0.1.1"
 description = "Desktop app for fiber link budgets, OTDR result review, TIA-598 colour codes and PON splitter planning"
 readme = "README.md"
 license = "MIT"

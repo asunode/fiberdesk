@@ -75,7 +75,8 @@ def calculate_pon(inp: PonInput, defaults: Defaults | None = None) -> PonResult:
 
     total = inp.olt_power_dbm - power
     classes = tuple(
-        ClassVerdict(name, budget, budget - total, grade_margin(budget - total, defaults.warn_band_db))
+        ClassVerdict(name, budget, budget - total,
+                     grade_margin(budget - total, defaults.safety_margin_db))
         for name, budget in (("B+", defaults.gpon_b_plus_db), ("C+", defaults.gpon_c_plus_db))
     )
     return PonResult(

@@ -14,7 +14,7 @@ FiberDesk calculates link budgets and PON splitter cascades, shows OTDR traces w
 |---|---|
 | **Overview** | Counts of projects, lines, measurements and devices; PASS / WARN / FAIL distribution for OTDR results and saved link budgets; recent measurements; per-project health. |
 | **Projects & Lines** | Projects (an FTTH area, a backbone…) with their A–B lines: length, fiber type (G.652.D / G.657.A1), connectors, splices, splitter cascade, optics. Add / edit / delete, search and filters. |
-| **Link Budget** | Tx power, Rx sensitivity, length, wavelength, splices, connectors, splitter cascade, safety margin. Shows total loss, remaining margin, verdict and a loss breakdown chart. Results can be saved to a line. |
+| **Link Budget** | Tx power, Rx sensitivity, length, wavelength, splices, connectors, splitter cascade, safety margin. Shows the power budget, total loss, remaining margin and required safety margin on separate rows, the verdict and a loss breakdown chart. Results can be saved to a line. |
 | **OTDR Results** | Measurement list with filters; a zoomable trace (distance km vs level dB) with event markers. Other wavelengths of the same line (1310 / 1550 / 1625 nm) can be overlaid. The event table shows type, loss, reflectance and section attenuation, coloured by threshold. Line budget vs OTDR loss is shown side by side. One-page PDF report. |
 | **Color Code** | TIA-598 lookup (e.g. fiber 37 of 48 → tube 4 Brown, fiber 1 Blue) and the full tube × fiber grid for 12–144 fiber cables. |
 | **PON / Splitter** | Cascaded split (e.g. 1:4 + 1:8). Shows OLT power down to subscriber power, total loss and the GPON class B+ / C+ verdict, with a power-along-the-path chart. |
@@ -64,8 +64,7 @@ You can also rebuild the demo data from **Settings → Demo data**. `FIBERDESK_D
 | Connector pair | 0.50 dB (WARN above 0.50, FAIL above 0.75) |
 | Splitter 1:2 / 1:4 / 1:8 / 1:16 / 1:32 / 1:64 | 3.7 / 7.3 / 10.5 / 13.7 / 17.1 / 20.5 dB |
 | GPON class B+ / C+ budget | 28 / 32 dB |
-| Safety margin | 3 dB |
-| WARN band | remaining margin 0–3 dB |
+| Safety margin | 3 dB (remaining margin below this is WARN) |
 | Reflectance | WARN above −45 dB, FAIL above −35 dB |
 | Macrobend | always at least WARN, FAIL above 0.5 dB |
 | Splitter tolerance | WARN above nominal + 1 dB, FAIL above nominal + 2 dB |
@@ -76,13 +75,17 @@ You can also rebuild the demo data from **Settings → Demo data**. `FIBERDESK_D
 power budget  = Tx power − Rx sensitivity
 total loss    = length × attenuation(λ) + splices × splice loss
                 + connectors × connector loss + Σ splitter loss
-remaining     = power budget − total loss − safety margin
-verdict       = FAIL if remaining < 0, WARN if remaining < WARN band, else PASS
+remaining     = power budget − total loss
+verdict       = FAIL  if remaining < 0
+                WARN  if 0 ≤ remaining < safety margin
+                PASS  if remaining ≥ safety margin
 ```
+
+The safety margin is the headroom a link must keep. It is a threshold, not a loss: it is never subtracted from the budget, and the screen shows it on its own row next to the remaining margin.
 
 ### PON
 
-The OLT output power minus the losses along the path gives the power at the ONU. The total loss is compared with the B+ and C+ class budgets, using the same WARN band.
+The OLT output power minus the losses along the path gives the power at the ONU. For each GPON class the remaining margin is the class budget (B+ 28 dB, C+ 32 dB) minus the total loss, graded with the same rule as the link budget: FAIL below 0 dB, WARN below the safety margin, PASS otherwise.
 
 ### OTDR
 
@@ -97,6 +100,8 @@ Demo traces use a simple model: backscatter slope, step losses, reflective peaks
 ```bash
 .venv/bin/python -m pytest
 ```
+
+GitHub Actions runs the suite on every push and pull request (`.github/workflows/tests.yml`).
 
 The suite covers the calculation core (budget, splitter / PON, colour code, OTDR events and traces), the database layer and demo seed, and an offscreen smoke test of every screen, including PDF export.
 

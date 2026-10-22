@@ -30,9 +30,8 @@ class Defaults:
     splice_loss_db: float = 0.10
     connector_loss_db: float = 0.50
     splitter_loss_db: dict[int, float] = field(default_factory=_splitter_loss)
-    # Budget verdicts
+    # Budget verdicts: a remaining margin below this warns, below zero fails
     safety_margin_db: float = 3.0
-    warn_band_db: float = 3.0
     # GPON optical budget classes (ITU-T G.984.2)
     gpon_b_plus_db: float = 28.0
     gpon_c_plus_db: float = 32.0

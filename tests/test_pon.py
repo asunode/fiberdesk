@@ -35,7 +35,14 @@ def test_class_verdicts_differ_on_large_split():
     b_plus, c_plus = result.classes
     assert result.total_loss_db == pytest.approx(30.0)
     assert b_plus.status is Status.FAIL
-    assert c_plus.status is Status.WARN  # 2 dB left, inside the 3 dB warn band
+    assert c_plus.status is Status.WARN  # 2 dB left, below the 3 dB safety margin
+
+
+def test_class_verdict_follows_safety_margin():
+    inp = PonInput(3.0, (32,), 10.0, 1490, connectors=2)  # 17.1 + 2.4 + 1.0 = 20.5 dB
+    assert calculate_pon(inp).classes[0].status is Status.PASS  # 7.5 dB left on B+
+    strict = Defaults.from_dict({"safety_margin_db": 8.0})
+    assert calculate_pon(inp, strict).classes[0].status is Status.WARN
 
 
 def test_no_stages_and_custom_budget():

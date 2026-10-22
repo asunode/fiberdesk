@@ -27,7 +27,8 @@ DEFAULT_SEED = 598
 REFERENCE_DATE = datetime(2026, 10, 15, 17, 0)  # demo "today"; measurements fall in the 6 months before
 RECEIVE_FIBER_KM = 0.15
 
-OPERATORS = ("Ece Yalın", "Burak Tunç", "Selin Akdağ", "Kaan Oruç", "Nil Sarp", "Emre Kılıç")
+# Role labels rather than personal names, so no real person can be implied.
+OPERATORS = tuple(f"Technician {c}" for c in "ABCDEF")
 
 DEVICES = (
     ("maxtester-730d", "FD7D-24-0117", "2026-03-11", "PON Field Team"),
@@ -100,11 +101,11 @@ class Layout:
 # Transmitter power / receiver sensitivity pairs (dBm) per style. The first entry is
 # the usual optic; the others are weaker parts that leave some links tight on budget.
 OPTICS = {
-    "pon": ((3.0, -28.0), (3.0, -28.0), (1.5, -27.0)),
+    "pon": ((3.0, -28.0), (3.0, -28.0), (0.5, -25.0)),
     "backbone": ((2.0, -24.0), (2.0, -24.0), (0.0, -20.0)),
-    "ring": ((-1.0, -18.0), (-1.0, -18.0), (-3.0, -14.0)),
-    "campus": ((-1.0, -14.4), (-1.0, -14.4), (-6.0, -12.6)),
-    "bts": ((-1.0, -14.4), (-1.0, -14.4), (-4.0, -14.4)),
+    "ring": ((-1.0, -18.0), (-1.0, -18.0), (-5.0, -14.0)),
+    "campus": ((-1.0, -14.4), (-1.0, -14.4), (-8.2, -12.6)),
+    "bts": ((-1.0, -14.4), (-1.0, -14.4), (-8.2, -14.4)),
 }
 
 

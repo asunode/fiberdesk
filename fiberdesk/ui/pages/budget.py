@@ -21,20 +21,6 @@ SPLITTER_PRESETS = ("", "1:2", "1:4", "1:8", "1:16", "1:32", "1:64", "1:4 + 1:8"
                     "1:2 + 1:16", "1:4 + 1:16")
 
 
-def metric(label: str) -> tuple[QWidget, QLabel]:
-    box = QWidget()
-    lay = QVBoxLayout(box)
-    lay.setContentsMargins(0, 0, 0, 0)
-    lay.setSpacing(0)
-    value = QLabel("—")
-    value.setObjectName("MidValue")
-    caption = QLabel(label)
-    caption.setObjectName("StatLabel")
-    lay.addWidget(value)
-    lay.addWidget(caption)
-    return box, value
-
-
 class BudgetPage(QWidget):
     def __init__(self, ctx: AppContext):
         super().__init__()
@@ -114,23 +100,28 @@ class BudgetPage(QWidget):
         self.badge = StatusBadge(None, large=True)
         top.addWidget(self.badge, 0, Qt.AlignmentFlag.AlignVCenter)
         top.addSpacing(10)
-        remaining_box = QVBoxLayout()
-        remaining_box.setSpacing(0)
-        self.remaining = QLabel("—")
-        self.remaining.setObjectName("BigValue")
-        cap = QLabel(tr("budget.remaining"))
-        cap.setObjectName("StatLabel")
-        remaining_box.addWidget(self.remaining)
-        remaining_box.addWidget(cap)
-        top.addLayout(remaining_box, 1)
+        self.verdict = QLabel()
+        self.verdict.setObjectName("StatLabel")
+        self.verdict.setWordWrap(True)
+        top.addWidget(self.verdict, 1)
         summary.body.addLayout(top)
+
+        # One row per figure; remaining margin and the required safety margin are separate.
         grid = QGridLayout()
         grid.setHorizontalSpacing(24)
-        boxes = [metric(tr("budget.available")), metric(tr("budget.total_loss")),
-                 metric(tr("budget.safety"))]
-        for i, (box, _) in enumerate(boxes):
-            grid.addWidget(box, 0, i)
-        self.available, self.total, self.safety_value = (v for _, v in boxes)
+        grid.setVerticalSpacing(6)
+        self.values: dict[str, QLabel] = {}
+        for r, key in enumerate(("available", "total_loss", "remaining", "safety")):
+            label = QLabel(tr(f"budget.{key}"))
+            label.setObjectName("StatLabel")
+            value = QLabel("—")
+            value.setObjectName("MidValue")
+            value.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
+            value.setFont(theme.tabular(value.font()))
+            grid.addWidget(label, r, 0)
+            grid.addWidget(value, r, 1)
+            self.values[key] = value
+        grid.setColumnStretch(2, 1)
         summary.body.addLayout(grid)
         self.usage = SegmentBar(height=14)
         summary.body.addWidget(self.usage)
@@ -272,28 +263,29 @@ class BudgetPage(QWidget):
         res = calculate_budget(inp, self.ctx.defaults)
         self._result = res
         self.badge.set_status(res.status)
-        self.remaining.setText(f"{res.remaining_db:+.2f} dB")
-        self.remaining.setStyleSheet(f"color: {theme.status_color(res.status).name()};")
-        self.available.setText(f"{res.available_db:.2f} dB")
-        self.total.setText(f"{res.total_loss_db:.2f} dB")
-        self.safety_value.setText(f"{res.safety_margin_db:.2f} dB")
+        self.verdict.setText(tr(f"budget.verdict.{res.status.value}"))
+        self.values["available"].setText(f"{res.available_db:.2f} dB")
+        self.values["total_loss"].setText(f"{res.total_loss_db:.2f} dB")
+        self.values["remaining"].setText(f"{res.remaining_db:+.2f} dB")
+        self.values["remaining"].setStyleSheet(f"color: {theme.status_color(res.status).name()};")
+        self.values["safety"].setText(f"{res.safety_margin_db:.2f} dB")
 
+        # Losses, then the remaining margin split into the reserved safety part and the rest.
+        remaining = max(0.0, res.remaining_db)
+        reserved = min(remaining, res.safety_margin_db)
         segments = [(i.loss_db, theme.LOSS_COLORS[i.key]) for i in res.items]
-        segments.append((res.safety_margin_db, theme.LOSS_COLORS["safety"]))
-        segments.append((max(0.0, res.remaining_db), theme.LOSS_COLORS["remaining"]))
+        segments += [(reserved, theme.LOSS_COLORS["safety"]),
+                     (remaining - reserved, theme.LOSS_COLORS["remaining"])]
         self.usage.set_segments(segments)
         legend = [(tr(f"loss.{i.key}"), theme.LOSS_COLORS[i.key]) for i in res.items]
         legend += [(tr("loss.safety"), theme.LOSS_COLORS["safety"]),
                    (tr("loss.remaining"), theme.LOSS_COLORS["remaining"])]
         self.legend.setText("   ".join(f"<span style='color:{c}'>●</span> {t}" for t, c in legend))
-        self.rule.setText(tr("budget.rule", warn=f"{self.ctx.defaults.warn_band_db:g}"))
+        self.rule.setText(tr("budget.rule", safety=f"{res.safety_margin_db:g}"))
 
         rows = [(tr(f"loss.{i.key}"), i.loss_db, theme.LOSS_COLORS[i.key], f"{i.loss_db:.2f} dB")
                 for i in res.items]
-        rows.append((tr("loss.safety"), res.safety_margin_db, theme.LOSS_COLORS["safety"],
-                     f"{res.safety_margin_db:.2f} dB"))
-        self.chart.set_rows(rows, scale=max(res.available_db, res.total_loss_db
-                                            + res.safety_margin_db, 1.0))
+        self.chart.set_rows(rows, scale=max(res.available_db, res.total_loss_db, 1.0))
         self.details.setText("<br>".join(
             f"<b>{tr(f'loss.{i.key}')}</b>: {i.detail}" for i in res.items))
         self.save_btn.setEnabled(self.line_combo.currentData() is not None)

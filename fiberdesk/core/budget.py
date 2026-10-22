@@ -37,7 +37,7 @@ class BudgetInput:
     splices: int = 0
     connectors: int = 2
     splitters: tuple[int, ...] = ()
-    safety_margin_db: float | None = None  # None → use Defaults.safety_margin_db
+    safety_margin_db: float | None = None  # required headroom; None → Defaults.safety_margin_db
 
     def __post_init__(self) -> None:
         if self.length_km < 0:
@@ -93,13 +93,13 @@ def calculate_budget(inp: BudgetInput, defaults: Defaults | None = None) -> Budg
     total = sum(i.loss_db for i in items)
     available = inp.tx_power_dbm - inp.rx_sensitivity_dbm
     safety = defaults.safety_margin_db if inp.safety_margin_db is None else inp.safety_margin_db
-    remaining = available - total - safety
+    remaining = available - total
     return BudgetResult(
         items=items,
         available_db=available,
         total_loss_db=total,
         safety_margin_db=safety,
         remaining_db=remaining,
-        status=grade_margin(remaining, defaults.warn_band_db),
+        status=grade_margin(remaining, safety),
         loss_by_key={i.key: i.loss_db for i in items},
     )

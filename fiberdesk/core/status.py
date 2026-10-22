@@ -28,11 +28,11 @@ class Status(str, Enum):
 _RANK = {Status.PASS: 0, Status.WARN: 1, Status.FAIL: 2}
 
 
-def grade_margin(margin_db: float, warn_band_db: float) -> Status:
-    """Grade a remaining margin: below zero fails, inside the warn band warns."""
+def grade_margin(margin_db: float, safety_margin_db: float) -> Status:
+    """Grade a remaining margin: below zero fails, below the safety margin warns."""
     if margin_db < 0:
         return Status.FAIL
-    if margin_db < warn_band_db:
+    if margin_db < safety_margin_db:
         return Status.WARN
     return Status.PASS
 
